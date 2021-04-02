@@ -1,20 +1,15 @@
-sourceLoc = 'C:\Users\Joselyn\Documents\GitHub\BSE-data\csv\';
-destLoc = 'C:\Users\Joselyn\Documents\GitHub\BSE-data\mat';
+function extractData
 
-cd(destLoc)
-subjects = dir('*.mat'); % count # of subjects to assign subj number
-subjNum = length(subjects)+1;
-cd ..
+sourceLoc = 'C:\Users\Joselyn\Documents\GitHub\BSE-data\csv\';
+destLoc = 'C:\Users\Joselyn\Documents\GitHub\BSE-data\mat\';
+
+load inits inits
+subjNum = length(inits)+1;
 
 files = dir([sourceLoc,'*.csv']);
 files = {files.name};
 
-demo = cell(1,7);
-lanna = NaN(96,10);
-
 for f=1:length(files)
-    fname = sprintf('bse%03d',subjNum);
-    subjNum = subjNum+1;
     
     % extract demographic data to variable demo
     [~,~,demo] = xlsread([sourceLoc,files{f}],'A2:G2');
@@ -40,7 +35,30 @@ for f=1:length(files)
         'stim',lannaData(:,3);
         };
     
+    % extract Shape data to variable shape
+    shapeData = num(num(:,2)==2,4:5);
+    shapeStims = txt(num(:,2)==2,4:7);
+    shape = {
+        'type',shapeData(:,1);
+        'resp',shapeData(:,2);
+        'stims',shapeStims;
+        };
+    
+    % save initials to inits file
+    inits{subjNum} = demo{1,2};
+    save inits inits;
+    
     % save to mat file
-    % first check that it doesnt already exist
-    save fname demo lanna % this saves it literally as "fname.mat"
+    fname = sprintf('bse%03d',subjNum);
+    cd(destLoc);
+    if exist([destLoc fname '.mat'])==2
+        error('error -- mat file already exists with this subj num');
+    else
+        save(sprintf('%s',fname),'demo','lanna','shape');
+    end
+    cd ..
+    
+    subjNum = subjNum+1;
+end
+
 end
