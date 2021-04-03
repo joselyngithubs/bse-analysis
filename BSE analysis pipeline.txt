@@ -1,0 +1,8 @@
+BSE analysis pipeline
+
+1. Download csv files from Firebase storage
+2. Check each file to see if subjects are "trying" -- i.e., headphoneCheck>=5, not pressing the same button continuously for over half a task
+3. Save csv files to "csv" folder. If excluding, place in "exclude" subfolder.
+4. Run extractData.m to convert csv's to mat files.
+5. Move the converted csv's to the "converted" subfolder in the "csv" folder.
+6. Run subsequent analysis codes.
