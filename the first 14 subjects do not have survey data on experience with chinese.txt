@@ -1,0 +1,2 @@
+the first 14 subjects do not have survey data on experience with chinese.
+starting with subj 15, demo includes chinese bg.

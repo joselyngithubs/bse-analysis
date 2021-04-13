@@ -13,21 +13,22 @@ for f=1:length(files)
     fprintf('\nSubject %d of %d',f,length(files));
     
     % extract demographic data to variable demo
-    [~,~,demo] = xlsread([sourceLoc,files{f}],'A2:G2');
-    [taskOrder,~,~] = xlsread([sourceLoc,files{f}],'I2:I544');
+    [~,~,demo] = xlsread([sourceLoc,files{f}],'A2:H2');
+    [taskOrder,~,~] = xlsread([sourceLoc,files{f}],'J2:J544');
     taskOrder = unique(taskOrder,'stable');
     demo = {
         'snum',subjNum;
         'init',demo{1};
         'lang',demo{3};
         'langOther',demo{4};
-        'yrsTrain',demo{5};
-        'fs',demo{6};
+        'chinese',demo{5};
+        'yrsTrain',demo{6};
+        'fs',demo{7};
         'taskOrder',taskOrder
         };
     
     % extract all task data
-    [num,txt,raw] = xlsread([sourceLoc,files{f}],'H2:Q544');
+    [num,txt,raw] = xlsread([sourceLoc,files{f}],'I2:R544');
     
     % extract Lanna data (taskID 1) to variable lanna
     lannaData = num(num(:,2)==1,[4,5,6]);

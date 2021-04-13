@@ -5,4 +5,4 @@ BSE analysis pipeline
 3. Save csv files to "csv" folder. If excluding, place in "exclude" subfolder.
 4. Run extractData.m to convert csv's to mat files.
 5. Move the converted csv's to the "converted" subfolder in the "csv" folder.
-6. Run subsequent analysis codes.
+6. Run subsequent analysis codes (main).
