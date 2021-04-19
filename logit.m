@@ -1,5 +1,5 @@
 function result = logit(p)
-% logit function: log(p/(1-p))
+% logit function: natural log(p/(1-p))
 
 result = NaN(size(p));
 for i=1:length(p)

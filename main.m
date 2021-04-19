@@ -57,15 +57,19 @@ for f=1:length(files)
     % analyze Mandarin task
     mandarin = [mandarin{1,2},mandarin{2,2}];
     pCorrMandarin(f) = mean(mandarin(:,1)==mandarin(:,2));
-    if f>14 && ~isnan(demo{5,2})% first 14 subj weren't asked about familiarity with chinese lang
-        for l=1:length(demo{5,2})
-            if strcmp(demo{5,2}{l},'Chinese (Mandarin)')
-                mandarinFam = [mandarinFam,f];
-            end 
-            if strcmp(demo{5,2}{l},'Chinese (Cantonese)')
-                cantoneseFam = [cantoneseFam,f];
-            end
-        end
+    if f>14 && length(demo{5,2})>1 % first 14 subj weren't asked about familiarity with chinese lang; for subj 15+, check if demo{5,2} contains something
+        % if demo{5,2} contains something, it will either be "Chinese
+        % (Cantonese)", "Chinese (Mandarin)", or BOTH of those strings as
+        % one combined string. So, check the contents based on length of
+        % the full string.
+        if length(demo{5,2})>19 % if longer than "Chinese (Cantonese)", then both languages must be listed
+            cantoneseFam = [cantoneseFam,f];           
+            mandarinFam = [mandarinFam,f];
+        elseif length(demo{5,2})<19 % only contains "Chinese (Mandarin)"
+            mandarinFam = [mandarinFam,f];
+        else % only contains "Chinese (Cantonese)"
+            cantoneseFam = [cantoneseFam,f];                
+        end        
     end
     
     % analyze pd
@@ -137,12 +141,15 @@ set(gca,'xtick',xTicks,'fontsize',16,'linewidth',2)
 % which shape stims were repeated
 
 
-% pCorr Mandarin data vs dprime
+% pCorr Mandarin data vs dprime. Note that there may be data plotted twice
+% if a subject is familiar with BOTH cantonese and mandarin.
 familiarity_unknown = logical([ones(1,14),zeros(1,length(pCorrMandarin)-14)]);
 
 figure; grid on; box on; hold on;
-plot(dprime(familiarity_unknown),logit(pCorrMandarin(familiarity_unknown)),'or','linewidth',4);
+plot(dprime(familiarity_unknown),logit(pCorrMandarin(familiarity_unknown)),'ok','linewidth',4);
 plot(dprime(~familiarity_unknown),logit(pCorrMandarin(~familiarity_unknown)),'ob','linewidth',4);
+plot(dprime(cantoneseFam),logit(pCorrMandarin(cantoneseFam)),'or','linewidth',4);
+plot(dprime(mandarinFam),logit(pCorrMandarin(mandarinFam)),'og','linewidth',4);
 % plot([-.8 5],[.25 .25],'k--','linewidth',2);
 title('Mandarin syllables Task');
 xlabel('Dprime');
@@ -151,7 +158,7 @@ xlim([-.8 5])
 % ylim([0 1])
 xTicks = -.5:.5:5;
 set(gca,'xtick',xTicks,'fontsize',16,'linewidth',2)
-legend({'chinese familiarity unknown','no chinese familiarity'});
+legend({'chinese familiarity unknown','no chinese familiarity','cantonese familiarity','mandarin familiarity'});
 
 % pd threshold vs. dprime
 plotdpVsThreshold(dprime,threshold);
@@ -177,6 +184,16 @@ title('Logit pCorr multitalker task')
 
 plotpCorrvsThreshold(logit(pCorrAll),threshold)
 title('Logit pCorr Lannamaraine')
+
+plotpCorrvsThreshold(logit(pCorrShape),threshold)
+title('Logit pCorr Shape')
+
+figure;plot(logit(pCorrShape),logit(pCorrAll),'o');
+xlabel('shape');ylabel('lannamaraine')
+figure;plot(logit(pCorrMandarin),logit(pCorrAll),'o');
+xlabel('mandarin');ylabel('lannamaraine')
+figure;plot(logit(pCorrShape),logit(pCorrMandarin),'o');
+xlabel('shape');ylabel('mandarin')
 
 % dprime histogram
 figure;
