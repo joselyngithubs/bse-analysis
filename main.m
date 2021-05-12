@@ -34,6 +34,8 @@ dprime = NaN(nSubj,1);
 
 yrsTrain = NaN(nSubj,1);
 
+gmsiScores = NaN(nSubj,3);
+
 for f=1:length(files)
     % load data mat file
     load([dataLoc files{f}]);
@@ -57,19 +59,21 @@ for f=1:length(files)
     % analyze Mandarin task
     mandarin = [mandarin{1,2},mandarin{2,2}];
     pCorrMandarin(f) = mean(mandarin(:,1)==mandarin(:,2));
-    if f>14 && length(demo{5,2})>1 % first 14 subj weren't asked about familiarity with chinese lang; for subj 15+, check if demo{5,2} contains something
+    if f>14 % first 14 subj weren't asked about familiarity with chinese lang
+        if length(demo{5,2})>1 % for subj 15+, check if demo{5,2} contains something
         % if demo{5,2} contains something, it will either be "Chinese
         % (Cantonese)", "Chinese (Mandarin)", or BOTH of those strings as
         % one combined string. So, check the contents based on length of
         % the full string.
-        if length(demo{5,2})>19 % if longer than "Chinese (Cantonese)", then both languages must be listed
-            cantoneseFam = [cantoneseFam,f];           
-            mandarinFam = [mandarinFam,f];
-        elseif length(demo{5,2})<19 % only contains "Chinese (Mandarin)"
-            mandarinFam = [mandarinFam,f];
-        else % only contains "Chinese (Cantonese)"
-            cantoneseFam = [cantoneseFam,f];                
-        end        
+            if length(demo{5,2})>19 % if longer than "Chinese (Cantonese)", then both languages must be listed
+                cantoneseFam = [cantoneseFam,f];           
+                mandarinFam = [mandarinFam,f];
+            elseif length(demo{5,2})<19 % only contains "Chinese (Mandarin)"
+                mandarinFam = [mandarinFam,f];
+            else % only contains "Chinese (Cantonese)"
+                cantoneseFam = [cantoneseFam,f];                
+            end     
+        end
     end
     
     % analyze pd
@@ -94,6 +98,7 @@ for f=1:length(files)
     dprime(f) = analyzeDprime([type(101:150),resp(101:150)]); % last 50 trials
     
     % analyze Golds MSI
+    gmsiScores(f,:) = [gmsi{4,2}(10),gmsi{4,2}(18),gmsi{4,2}(37)];
     
     % analyze music yrs
     % if snum<15, yrsTrain is idx 5; else idx 6
@@ -140,14 +145,17 @@ set(gca,'xtick',xTicks,'fontsize',16,'linewidth',2)
 
 % which shape stims were repeated
 
-
+%% Mandarin
 % pCorr Mandarin data vs dprime. Note that there may be data plotted twice
 % if a subject is familiar with BOTH cantonese and mandarin.
 familiarity_unknown = logical([ones(1,14),zeros(1,length(pCorrMandarin)-14)]);
+no_chinese = ~familiarity_unknown;
+no_chinese(cantoneseFam) = zeros(size(cantoneseFam));
+no_chinese(mandarinFam) = zeros(size(mandarinFam));
 
 figure; grid on; box on; hold on;
 plot(dprime(familiarity_unknown),logit(pCorrMandarin(familiarity_unknown)),'ok','linewidth',4);
-plot(dprime(~familiarity_unknown),logit(pCorrMandarin(~familiarity_unknown)),'ob','linewidth',4);
+plot(dprime(no_chinese),logit(pCorrMandarin(no_chinese)),'ob','linewidth',4);
 plot(dprime(cantoneseFam),logit(pCorrMandarin(cantoneseFam)),'or','linewidth',4);
 plot(dprime(mandarinFam),logit(pCorrMandarin(mandarinFam)),'og','linewidth',4);
 % plot([-.8 5],[.25 .25],'k--','linewidth',2);
@@ -159,6 +167,34 @@ xlim([-.8 5])
 xTicks = -.5:.5:5;
 set(gca,'xtick',xTicks,'fontsize',16,'linewidth',2)
 legend({'chinese familiarity unknown','no chinese familiarity','cantonese familiarity','mandarin familiarity'});
+
+% pCorr Mandarin vs threshold, with color legend. Note that there may be data plotted twice
+% if a subject is familiar with BOTH cantonese and mandarin.
+thresholdsPC = threshold;
+thresholdsPC(thresholdsPC<6.25) = 6.25;
+log2Thresholds = log2(thresholdsPC);
+figure;
+hold on
+scatter(logit(pCorrMandarin(familiarity_unknown)),-log2Thresholds(familiarity_unknown),100,'k','linewidth',4)
+scatter(logit(pCorrMandarin(no_chinese)),-log2Thresholds(no_chinese),100,'b','linewidth',4)
+scatter(logit(pCorrMandarin(cantoneseFam)),-log2Thresholds(cantoneseFam),100,'r','linewidth',4)
+scatter(logit(pCorrMandarin(mandarinFam)),-log2Thresholds(mandarinFam),100,'g','linewidth',4)
+legend({'chinese familiarity unknown','no chinese familiarity','cantonese familiarity','mandarin familiarity'});
+yTicks = -log2([1600 800 400 200 100 50 25 12.5 6.25]);
+yTickVals = 2.^(-yTicks);
+set(gca,'ytick',yTicks,'yticklabel',yTickVals,'fontsize',16,'linewidth',2)
+ylim([-log2(1600) -log2(12.5/2.5)])
+axis on
+box on
+grid on
+xlabel('logit prop correct');
+ylabel('Pitch-difference threshold (cents)')
+% edit y-axis label to show <=6.25
+labels = strsplit(num2str(yTickVals));
+labels{9}='\leq6.25';
+yticklabels(labels);
+
+%%
 
 % pd threshold vs. dprime
 plotdpVsThreshold(dprime,threshold);
@@ -179,14 +215,17 @@ xlim([-.8 5])
 xTicks = -.5:.5:5;
 set(gca,'xtick',xTicks,'fontsize',16,'linewidth',2)
 
-plotpCorrvsThreshold(logit(pCorrCrm),threshold)
+plotpCorrvsThreshold(pCorrCrm,threshold)
 title('Logit pCorr multitalker task')
 
-plotpCorrvsThreshold(logit(pCorrAll),threshold)
+plotpCorrvsThreshold(pCorrAll,threshold)
 title('Logit pCorr Lannamaraine')
 
-plotpCorrvsThreshold(logit(pCorrShape),threshold)
+plotpCorrvsThreshold(pCorrShape,threshold)
 title('Logit pCorr Shape')
+
+plotpCorrvsThreshold(pCorrMandarin,threshold)
+title('Logit pCorr Mandarin')
 
 figure;plot(logit(pCorrShape),logit(pCorrAll),'o');
 xlabel('shape');ylabel('lannamaraine')
@@ -220,6 +259,116 @@ plotRegLine(yrsTrain,dprime,[min(yrsTrain)-1 max(yrsTrain)+1]);
 
 % music training vs threshold
 plotMusicVsThreshold(yrsTrain,threshold)
+
+%% GMSI
+% col 1: perceptual subscale score
+% col 2: training subscale score
+% col 3: sophistication subscale score
+
+% GMSI sophistication vs dprime
+figure;
+scatter(gmsiScores(:,3),dprime,100,'k','linewidth',4)
+axis on
+box on
+grid on
+xlabel('GMSI sophistication score');
+ylabel('3-task-d^\prime');
+xlim([min(gmsiScores(:,3))-1 max(gmsiScores(:,3))+1])
+ylim([-1 5])
+% xTicks = [0,5,10,14];
+% set(gca,'xtick',xTicks,'fontsize',16,'linewidth',2)
+set(gca,'fontsize',16,'linewidth',2)
+[r1,p1] = corrcoef(gmsiScores(:,3),dprime);
+title(sprintf('r = %.2f, p = %.2f',r1(2),p1(2)));
+plotRegLine(gmsiScores(:,3),dprime,[min(gmsiScores(:,3))-1 max(gmsiScores(:,3))+1]);
+
+% GMSI perceptual vs dprime
+figure;
+scatter(gmsiScores(:,1),dprime,100,'k','linewidth',4)
+axis on
+box on
+grid on
+xlabel('GMSI perceptual score');
+ylabel('3-task-d^\prime');
+xlim([min(gmsiScores(:,1))-1 max(gmsiScores(:,1))+1])
+ylim([-1 5])
+% xTicks = [0,5,10,14];
+% set(gca,'xtick',xTicks,'fontsize',16,'linewidth',2)
+set(gca,'fontsize',16,'linewidth',2)
+[r1,p1] = corrcoef(gmsiScores(:,1),dprime);
+title(sprintf('r = %.2f, p = %.2f',r1(2),p1(2)));
+plotRegLine(gmsiScores(:,1),dprime,[min(gmsiScores(:,1))-1 max(gmsiScores(:,1))+1]);
+
+% GMSI training vs dprime
+figure;
+scatter(gmsiScores(:,2),dprime,100,'k','linewidth',4)
+axis on
+box on
+grid on
+xlabel('GMSI training score');
+ylabel('3-task-d^\prime');
+xlim([min(gmsiScores(:,2))-1 max(gmsiScores(:,2))+1])
+ylim([-1 5])
+% xTicks = [0,5,10,14];
+% set(gca,'xtick',xTicks,'fontsize',16,'linewidth',2)
+set(gca,'fontsize',16,'linewidth',2)
+[r1,p1] = corrcoef(gmsiScores(:,2),dprime);
+title(sprintf('r = %.2f, p = %.2f',r1(2),p1(2)));
+plotRegLine(gmsiScores(:,2),dprime,[min(gmsiScores(:,2))-1 max(gmsiScores(:,2))+1]);
+
+% gmsi vs threshold
+plotGMSIvsThreshold(gmsiScores(:,1),threshold);
+title('GMSI perceptual score')
+plotGMSIvsThreshold(gmsiScores(:,2),threshold);
+title('GMSI training score')
+plotGMSIvsThreshold(gmsiScores(:,3),threshold);
+title('GMSI sophistication score')
+
+% gmsi vs gmsi (correlations)
+figure;plot(gmsiScores(:,1),gmsiScores(:,2),'o');
+xlabel('GMSI perceptual');ylabel('GMSI training');
+[r1,p1] = corrcoef(gmsiScores(:,1),gmsiScores(:,2));
+title(sprintf('r = %.2f, p = %.2f',r1(2),p1(2)));
+plotRegLine(gmsiScores(:,1),gmsiScores(:,2),[min(gmsiScores(:,1))-1 max(gmsiScores(:,1))+1]);
+figure;plot(gmsiScores(:,1),gmsiScores(:,3),'o');
+xlabel('GMSI perceptual');ylabel('GMSI sophistication');
+[r1,p1] = corrcoef(gmsiScores(:,1),gmsiScores(:,3));
+title(sprintf('r = %.2f, p = %.2f',r1(2),p1(2)));
+plotRegLine(gmsiScores(:,1),gmsiScores(:,3),[min(gmsiScores(:,1))-1 max(gmsiScores(:,1))+1]);
+figure;plot(gmsiScores(:,3),gmsiScores(:,2),'o');
+xlabel('GMSI sophistication');ylabel('GMSI training');
+[r1,p1] = corrcoef(gmsiScores(:,3),gmsiScores(:,2));
+title(sprintf('r = %.2f, p = %.2f',r1(2),p1(2)));
+plotRegLine(gmsiScores(:,3),gmsiScores(:,2),[min(gmsiScores(:,3))-1 max(gmsiScores(:,3))+1]);
+end
+
+function plotGMSIvsThreshold(gmsi,thresholdsPC)
+
+thresholdsPC(thresholdsPC<6.25) = 6.25;
+
+figure
+
+log2Thresholds = log2(thresholdsPC);
+hold on
+% plot([-.8 5],-log2(50)*[1 1],'k--','linewidth',2)
+scatter(gmsi,-log2Thresholds,100,'k','linewidth',4)
+
+yTicks = -log2([1600 800 400 200 100 50 25 12.5 6.25]);
+yTickVals = 2.^(-yTicks);
+% xTicks = -.5:.5:5;
+set(gca,'ytick',yTicks,'yticklabel',yTickVals,'fontsize',16,'linewidth',2)
+ylim([-log2(1600) -log2(12.5/2.5)])
+% xlim([-.8 5])
+axis on
+box on
+grid on
+xlabel('gmsi score')
+ylabel('Pitch-difference threshold (cents)')
+
+% edit y-axis label to show <=6.25
+labels = strsplit(num2str(yTickVals));
+labels{9}='\leq6.25';
+yticklabels(labels);
 
 end
 
@@ -293,6 +442,8 @@ end
 
 function plotpCorrvsThreshold(propCorr,thresholdsPC)
 
+propCorr = logit(propCorr);
+
 thresholdsPC(thresholdsPC<6.25) = 6.25;
 
 figure
@@ -313,7 +464,7 @@ ylim([-log2(1600) -log2(12.5/2.5)])
 axis on
 box on
 grid on
-xlabel('prop correct');
+xlabel('logit prop correct');
 ylabel('Pitch-difference threshold (cents)')
 % [r1,p1] = corrcoef(yrsTrain,-log2Thresholds);
 % plotRegLine(yrsTrain,-log2Thresholds,[min(yrsTrain)-1 max(yrsTrain)+1]);

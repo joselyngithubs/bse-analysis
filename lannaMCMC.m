@@ -14,7 +14,7 @@ if nargin < 5 || isempty(sigmaScalar)
 end
 
 if nargin < 4 || isempty(Sigmas)
-    Sigmas = [0.01 0.01];
+    Sigmas = [0.2 0.2];
 end
 
 if nargin < 3 || isempty(Prevs)
@@ -83,7 +83,7 @@ global D
 mu = Params(1);
 sigma = Params(2);
 
-prob = normcdf((D(:,2)-mu)/sigma); 
+prob = normcdf((D(:,1)-mu)/sigma); 
 prob(prob > 0.99) = 0.99;
 prob(prob < 0.01) = 0.01;
 prob = prob(:);
