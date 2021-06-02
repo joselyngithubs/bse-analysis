@@ -1,4 +1,4 @@
-function compressedData = prepLannaData
+function newStat = prepLannaData
 
 % read in one reasonable subject's data to be used in MCMC
 dataLoc = 'C:\Users\Joselyn\Documents\GitHub\BSE-data\mat\';
@@ -20,5 +20,6 @@ for k=1:6
     compressedData(k,2) = sum(lanna_all(whichOnes,3)); % col 2: num trials responded "2"
     compressedData(k,3) = sum(lanna_all(whichOnes,2)); % col 3: num trials responded "1"
 end
+newStat = [-2.5 -1.5 -.5 .5 1.5 2.5]*compressedData(:,2);
 
 end

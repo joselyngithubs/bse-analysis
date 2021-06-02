@@ -67,6 +67,7 @@ global D
 % D(:,1) = stimulus type (1 thru 6). 1-3=="1"; 4-6=="2"
 % D(:,2) = num trials responded "2"
 % D(:,3) = num trials responded "1"
+% D(:,4) = [-2.5 -1.5 -.5 .5 1.5 2.5]*D(:,2);
 
 % P(respond "2")
 % = P(mu - sigma * X > 0)
@@ -88,7 +89,8 @@ prob(prob > 0.99) = 0.99;
 prob(prob < 0.01) = 0.01;
 prob = prob(:);
 
-LogL = sum(D(:,2).*log(prob) + D(:,3).*log(1-prob));
+% we flipped the data matrix
+LogL = sum(D(:,3).*log(prob) + D(:,2).*log(1-prob));
 
 end
 
