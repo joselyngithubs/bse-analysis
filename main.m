@@ -16,8 +16,9 @@ pCorrAll = NaN(nSubj,1);
 
 pCorrShape = NaN(nSubj,1);
 nRepeats = NaN(nSubj,1);
-%shapeStimsRepeated;
-k=1; % to iterate thru shapeStimsRepeated
+shape_stims_repeated = cell(1,1);
+k=1; % to iterate thru shape_stims_repeated
+idx_set = {'A','B','C'};
 
 pCorrMandarin = NaN(nSubj,1);
 mandarinFam = []; % subjects who speak mandarin
@@ -52,9 +53,27 @@ for f=1:length(files)
     shapeData = [shape{1,2},shape{2,2},shape{4,2}];
     pCorrShape(f) = mean(shapeData(:,1)==shapeData(:,2));
     nRepeats(f) = sum(shapeData(:,3));
-%     if(nRepeats(f)>0)
-%         stims = shape{1,3};
-%     end
+    % collect which stimuli were repeated
+    if(nRepeats(f)>0)
+        stims_tmp = shape{3,2};
+        n_repeated = shapeData(:,3);
+        
+        % filter just the stims that were repeated
+        stims_tmp = stims_tmp(n_repeated>0,:);
+        n_repeated = n_repeated(n_repeated>0);
+        
+        for r=1:size(stims_tmp,1)
+            % the last column is A,B,C so convert those to numbers first
+            idx_tmp = find(strcmp(stims_tmp(r,4),idx_set));
+            % grab the relevant word based on that index; store in
+            % shape_stims_repeated as many times as that word was repeated
+            for m=1:n_repeated(r)
+                shape_stims_repeated{k} = stims_tmp{idx_tmp};
+                k = k+1;
+            end
+            
+        end
+    end
     
     % analyze Mandarin task
     mandarin = [mandarin{1,2},mandarin{2,2}];
@@ -179,29 +198,52 @@ whichOnes = threshold < 50;
 plot(dprime(whichOnes),logit(pCorrShape(whichOnes)),'ko','linewidth',4);
 plot(dprime(~whichOnes),logit(pCorrShape(~whichOnes)),'ro','linewidth',4);
 % plot([-.8 5],[.5 .5],'k--','linewidth',2)
-xlabel('Dprime');
+xlabel('3-task-d^\prime');
 ylabel('Logit Prop corr');
 xlim([-.8 5])
 % ylim([0 1])
 xTicks = -.5:.5:5;
 set(gca,'xtick',xTicks,'fontsize',16,'linewidth',2)
-legend({'PDT below 50','PDT above 50'});
+legend({'PDT < 50','PDT > 50'});
 [r1,p1] = corrcoef(dprime(whichOnes),logit(pCorrShape(whichOnes)));
 [r2,p2] = corrcoef(dprime(~whichOnes),logit(pCorrShape(~whichOnes)));
 title('Shape Task')
 text(2,-1.1,sprintf('below50: r = %.2f, p = %.2f\nabove50: r = %.2f, p = %.2f',r1(2),p1(2),r2(2),p2(2)));
 
-% % nRepeats each subject needed on the Shape task
+% % for the defense slides
+% % pCorr shape data vs dprime (legend to show if threshold below or above 50
+% % cents)
+% gold_color = [218,165,32];
 % figure; grid on; box on; hold on;
-% plot(dprime,nRepeats,'o','linewidth',4);
-% title('Shape Task, nRepeats');
-% xlabel('Dprime');
-% ylabel('nRepeats');
+% whichOnes = threshold < 50;
+% plot(dprime(whichOnes),logit(pCorrShape(whichOnes)),'ko','linewidth',4);
+% plot(dprime(~whichOnes),logit(pCorrShape(~whichOnes)),'o','linewidth',4,'markeredgecolor',gold_color./218);
+% % plot([-.8 5],[.5 .5],'k--','linewidth',2)
+% xlabel('3-task-d^\prime');
+% ylabel('Prosody score');
 % xlim([-.8 5])
+% % ylim([0 1])
 % xTicks = -.5:.5:5;
 % set(gca,'xtick',xTicks,'fontsize',16,'linewidth',2)
+% legend({'PDT < 50','PDT > 50'});
+% [r1,p1] = corrcoef(dprime(whichOnes),logit(pCorrShape(whichOnes)));
+% [r2,p2] = corrcoef(dprime(~whichOnes),logit(pCorrShape(~whichOnes)));
+
+% % nRepeats each subject needed on the Shape task
+figure; grid on; box on; hold on;
+plot(dprime,nRepeats,'o','linewidth',4);
+title('Shape Task, nRepeats');
+xlabel('Dprime');
+ylabel('nRepeats');
+xlim([-.8 5])
+xTicks = -.5:.5:5;
+set(gca,'xtick',xTicks,'fontsize',16,'linewidth',2)
 
 % which shape stims were repeated
+figure
+histogram(categorical(shape_stims_repeated));
+title('number of times each Shape stim was repeated');
+xtickangle(45);
 
 %% Mandarin
 % pCorr Mandarin data vs dprime. Note that there may be data plotted twice
@@ -616,7 +658,8 @@ log2Thresholds = log2(thresholdsPC);
 hold on
 plot([-.8 5],-log2(50)*[1 1],'k--','linewidth',2)
 scatter(TonalityD,-log2Thresholds,100,'k','linewidth',4)
-whichOnes = thresholdsPC > 100 & TonalityD > 1;
+whichOnes = thresholdsPC <0;
+% whichOnes = thresholdsPC > 100 & TonalityD > 1;
 plot(TonalityD(whichOnes),-log2Thresholds(whichOnes),'ko','linewidth',4,'markerfacecolor','k')
 % yVals = round(2.^(1:.25:3.5));
 % yTicks = -log2([1600 800 400 200 100 50 25 12.5 6.25 3.125 1.5625])
